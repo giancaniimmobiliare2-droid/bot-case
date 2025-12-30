@@ -1,0 +1,133 @@
+import pandas as pd
+import os
+import urllib.parse # Serve per creare i link corretti
+
+# --- CONFIGURAZIONE ---
+# Sostituisci con i tuoi link CSV pubblicati
+URL_IMMOBILI = "INSERISCI_QUI_LINK_CSV_IMMOBILI" 
+URL_ACQUIRENTI = "INSERISCI_QUI_LINK_CSV_ACQUIRENTI"
+
+# URL base del tuo sito (dove verranno caricate le pagine)
+# Esempio: "https://miositoimmobiliare.it/clienti"
+BASE_URL_SITO = "https://tuosito.com/clienti"
+
+OUTPUT_DIR = "pagine_clienti"
+
+# --- 1. LETTURA DATI ---
+print("--- START ---")
+try:
+    df_immobili = pd.read_csv(URL_IMMOBILI)
+    df_acquirenti = pd.read_csv(URL_ACQUIRENTI)
+    print("Dati scaricati correttamente da Google Sheets.")
+except Exception as e:
+    print(f"ERRORE di lettura: {e}")
+    exit()
+
+# Pulizia dati: Convertiamo i prezzi in numeri (togliendo eventuali simboli € o spazi)
+# Assumiamo che nel foglio immobili le colonne siano: zona, prezzo, foto_url, descrizione, camere
+df_immobili['prezzo'] = pd.to_numeric(df_immobili['prezzo'].astype(str).str.replace(r'[^\d]', '', regex=True), errors='coerce')
+df_acquirenti['Budget Max'] = pd.to_numeric(df_acquirenti['Budget Max'].astype(str).str.replace(r'[^\d]', '', regex=True), errors='coerce')
+
+if not os.path.exists(OUTPUT_DIR):
+    os.makedirs(OUTPUT_DIR)
+
+# --- 2. TEMPLATE HTML ---
+html_template = """
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proposte per {nome}</title>
+    <style>
+        body {{ font-family: sans-serif; background: #f0f2f5; padding: 20px; max-width: 600px; margin: auto; }}
+        .header {{ text-align: center; margin-bottom: 20px; }}
+        .card {{ background: white; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; overflow: hidden; }}
+        .card img {{ width: 100%; height: 200px; object-fit: cover; }}
+        .content {{ padding: 15px; }}
+        .prezzo {{ color: #2e7d32; font-weight: bold; font-size: 1.2em; }}
+        .btn {{ display: block; background: #0088cc; color: white; text-align: center; padding: 12px; text-decoration: none; border-radius: 6px; margin-top: 10px; }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Ciao {nome} 👋</h1>
+        <p>Ecco gli immobili a <strong>{citta}</strong> ideali per te!</p>
+    </div>
+    {schede}
+</body>
+</html>
+"""
+
+# --- 3. MATCHING E CREAZIONE PAGINE ---
+print("Inizio calcolo corrispondenze...")
+
+# Lista per ricordarci a chi inviare cosa (utile per il log)
+da_notificare = []
+
+for index, cliente in df_acquirenti.iterrows():
+    # Leggiamo i dati usando ESATTAMENTE i nomi delle tue colonne
+    nome = str(cliente['Nome'])
+    citta_richiesta = str(cliente['Città']).strip()
+    budget = cliente['Budget Max']
+    telegram_id = str(cliente['TelegramID']).replace('.0', '') # Toglie decimali se presenti
+    
+    # FILTRO:
+    # 1. La zona dell'immobile deve contenere la città richiesta (es. "Roma Centro" contiene "Roma")
+    # 2. Il prezzo deve essere inferiore o uguale al Budget Max
+    matches = df_immobili[
+        (df_immobili['zona'].str.contains(citta_richiesta, case=False, na=False)) & 
+        (df_immobili['prezzo'] <= budget)
+    ]
+    
+    if not matches.empty:
+        # Generiamo l'HTML delle schede
+        schede_html = ""
+        for idx, casa in matches.iterrows():
+            schede_html += f"""
+            <div class="card">
+                <img src="{casa['foto_url']}" alt="Casa">
+                <div class="content">
+                    <h3>{casa['zona']}</h3>
+                    <p>{casa['descrizione']}</p>
+                    <p class="prezzo">€ {casa['prezzo']:,.0f}</p>
+                    <p>🛏️ {casa['camere']} Camere</p>
+                    <a href="https://wa.me/39TUONUMERO?text=Interessato al rif {casa['id']}" class="btn">Richiedi Visita</a>
+                </div>
+            </div>
+            """
+        
+        # Creiamo la pagina HTML
+        pagina_completa = html_template.format(nome=nome, citta=citta_richiesta, schede=schede_html)
+        
+        # Nome file sicuro (es. pagina_Mario_Rossi_123.html)
+        nome_file = f"proposte_{cliente['id']}_{nome.replace(' ', '_')}.html"
+        path_completo = os.path.join(OUTPUT_DIR, nome_file)
+        
+        with open(path_completo, "w", encoding="utf-8") as f:
+            f.write(pagina_completa)
+            
+        # Generiamo il link finale
+        link_finale = f"{BASE_URL_SITO}/{nome_file}"
+        
+        print(f"[OK] Creata pagina per {nome}: {len(matches)} immobili trovati.")
+        
+        # Prepariamo il messaggio Telegram (simulato)
+        messaggio = f"Ciao {nome}, ho selezionato {len(matches)} nuovi immobili per te a {citta_richiesta}. Guardali qui: {link_finale}"
+        
+        da_notificare.append({
+            'nome': nome,
+            'telegram_id': telegram_id,
+            'messaggio': messaggio
+        })
+
+# --- 4. OUTPUT PER TELEGRAM (PROVA) ---
+print("\n--- MESSAGGI PRONTI DA INVIARE ---")
+for notifica in da_notificare:
+    if notifica['telegram_id'] and notifica['telegram_id'] != 'nan':
+        # Qui in futuro metteremo il codice che invia davvero
+        print(f"Destinatario: {notifica['nome']} (ID: {notifica['telegram_id']})")
+        print(f"Testo: {notifica['messaggio']}")
+        print("-" * 30)
+    else:
+        print(f"ATTENZIONE: {notifica['nome']} non ha TelegramID.")
