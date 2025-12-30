@@ -3,11 +3,11 @@
           git config --global user.name 'Agente Bot'
           git config --global user.email 'bot@noreply.github.com'
           
-          # Controlla se la cartella contiene file (ignorando i file nascosti)
-          if [ -n "$(ls -A pagine_clienti 2>/dev/null)" ]; then
+          # Controlla se ci sono file html
+          if [ -n "$(ls -A pagine_clienti/*.html 2>/dev/null)" ]; then
             git add pagine_clienti/*
             git diff --quiet && git diff --staged --quiet || (git commit -m "Nuove proposte generate" && git push)
             echo "✅ Pagine caricate con successo!"
           else
-            echo "⚠️ Nessuna pagina generata: Nessun match trovato o errore nei dati."
+            echo "⚠️ Nessuna pagina generata. Controlla i dati nel file Excel."
           fi
