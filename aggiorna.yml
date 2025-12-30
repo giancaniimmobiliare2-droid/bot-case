@@ -3,11 +3,11 @@
           git config --global user.name 'Agente Bot'
           git config --global user.email 'bot@noreply.github.com'
           
-          # Controlla se ci sono file HTML (ignora errore se vuoto)
+          # Se trova file html li carica, altrimenti non fa nulla
           if ls pagine_clienti/*.html 1> /dev/null 2>&1; then
-            echo "✅ Trovate pagine generate. Caricamento in corso..."
             git add pagine_clienti/*
-            git diff --quiet && git diff --staged --quiet || (git commit -m "Nuove proposte generate" && git push)
+            git diff --quiet && git diff --staged --quiet || (git commit -m "Nuove proposte" && git push)
+            echo "✅ Fatto!"
           else
-            echo "⚠️ NESSUNA PAGINA GENERATA. Il codice funziona, ma non ha trovato immobili adatti ai clienti nel file Excel."
+            echo "⚠️ Nessuna casa trovata, quindi nessuna pagina creata."
           fi
