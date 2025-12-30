@@ -1,0 +1,32 @@
+name: Bot Immobiliare
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - run: pip install pandas
+      - run: python main.py
+      
+      # Caricamento su GitHub (Senza errore rosso se vuoto)
+      - run: |
+          git config --global user.name 'Agente Bot'
+          git config --global user.email 'bot@noreply.github.com'
+          
+          if ls pagine_clienti/*.html 1> /dev/null 2>&1; then
+             echo "✅ File trovati! Li pubblico..."
+             git add pagine_clienti/*
+             git diff --quiet && git diff --staged --quiet || (git commit -m "Nuove proposte" && git push)
+          else
+             echo "⚠️ Nessun file generato, ma tutto OK. Nessun match trovato oggi."
+          fi
