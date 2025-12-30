@@ -21,17 +21,18 @@ jobs:
       
       - run: python main.py
       
-      # QUESTA È LA PARTE CHE TI MANCAVA NEL LOG
+      # QUESTA È LA PARTE CHE TI MANCAVA: IL CONTROLLO DI SICUREZZA
       - name: Pubblicazione Sicura
         run: |
           git config --global user.name 'Agente Bot'
           git config --global user.email 'bot@noreply.github.com'
           
-          # Controlla se ci sono file HTML. Se la cartella è vuota, NON esegue git add.
+          # Controlla se ci sono file HTML. 
+          # Se la cartella è vuota, NON esegue git add e NON dà errore rosso.
           if ls pagine_clienti/*.html 1> /dev/null 2>&1; then
              echo "✅ File trovati! Li carico..."
              git add pagine_clienti/*
              git diff --quiet && git diff --staged --quiet || (git commit -m "Nuove proposte" && git push)
           else
-             echo "⚠️ Nessun file generato. Il codice Python ha girato, ma non ha trovato case da abbinare."
+             echo "⚠️ Nessun file generato. Il codice ha girato, ma non ha trovato case da abbinare."
           fi
