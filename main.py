@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-# --- I TUOI LINK CORRETTI (Convertiti in CSV) ---
+# --- I TUOI LINK GIÀ CONVERTITI IN CSV ---
 URL_ACQUIRENTI = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQZIA9jfHfgbBCBoxygzrz54_KABSBO8uLIVBnWIPpBNoIx9xmWLR-nuTx7sknVd95TYhueH5pETdR_/pub?gid=1947365306&single=true&output=csv"
 URL_IMMOBILI = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQZIA9jfHfgbBCBoxygzrz54_KABSBO8uLIVBnWIPpBNoIx9xmWLR-nuTx7sknVd95TYhueH5pETdR_/pub?gid=835643388&single=true&output=csv"
 
