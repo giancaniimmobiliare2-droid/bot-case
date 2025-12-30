@@ -1,8 +1,7 @@
 import pandas as pd
 import os
 
-# --- I TUOI LINK CORRETTI (LI HO CONVERTITI IO IN CSV PER TE) ---
-# Non toccarli, questi funzionano.
+# --- I TUOI LINK CORRETTI (LI HO SISTEMATI IO) ---
 URL_ACQUIRENTI = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQZIA9jfHfgbBCBoxygzrz54_KABSBO8uLIVBnWIPpBNoIx9xmWLR-nuTx7sknVd95TYhueH5pETdR_/pub?gid=1947365306&single=true&output=csv"
 URL_IMMOBILI = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQZIA9jfHfgbBCBoxygzrz54_KABSBO8uLIVBnWIPpBNoIx9xmWLR-nuTx7sknVd95TYhueH5pETdR_/pub?gid=835643388&single=true&output=csv"
 
@@ -21,7 +20,7 @@ try:
     immobili['prezzo'] = pd.to_numeric(immobili['prezzo'].astype(str).str.replace(r'[^\d]', '', regex=True), errors='coerce')
     print("✅ Dati scaricati!")
 except Exception as e:
-    print(f"❌ Errore: {e}")
+    print(f"❌ Errore lettura dati: {e}")
     exit()
 
 # Template semplice
@@ -37,7 +36,6 @@ for index, cliente in acquirenti.iterrows():
     citta = str(cliente['Città'])
     budget = cliente['Budget Max']
     
-    # Filtro
     match = immobili[
         (immobili['zona'].str.contains(citta, case=False, na=False)) & 
         (immobili['prezzo'] <= budget)
@@ -48,6 +46,7 @@ for index, cliente in acquirenti.iterrows():
         for idx, casa in match.iterrows():
             schede += f"<p>🏠 {casa['zona']} - € {casa['prezzo']}</p>"
         
+        # Salva il file
         with open(f"{OUTPUT_DIR}/proposte_{cliente['id']}.html", "w") as f:
             f.write(html_template.format(nome=nome, citta=citta, contenuto=schede))
         print(f"✅ Pagina creata per {nome}")
