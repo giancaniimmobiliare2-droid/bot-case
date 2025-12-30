@@ -1,4 +1,4 @@
-name: Bot Immobiliare
+name: Bot Immobiliare Ultima Chance
 
 on:
   push:
@@ -12,27 +12,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
       - uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-          
       - run: pip install pandas
-      
       - run: python main.py
       
-      # QUESTA È LA PARTE CHE TI MANCAVA: IL CONTROLLO DI SICUREZZA
-      - name: Pubblicazione Sicura
-        run: |
+      # SALVATAGGIO SICURO (ANTI-ROSSO)
+      - run: |
           git config --global user.name 'Agente Bot'
           git config --global user.email 'bot@noreply.github.com'
           
-          # Controlla se ci sono file HTML. 
-          # Se la cartella è vuota, NON esegue git add e NON dà errore rosso.
           if ls pagine_clienti/*.html 1> /dev/null 2>&1; then
-             echo "✅ File trovati! Li carico..."
              git add pagine_clienti/*
-             git diff --quiet && git diff --staged --quiet || (git commit -m "Nuove proposte" && git push)
+             git commit -m "Nuove proposte"
+             git push
+             echo "✅ FILE CARICATI"
           else
-             echo "⚠️ Nessun file generato. Il codice ha girato, ma non ha trovato case da abbinare."
+             echo "✅ NESSUN FILE GENERATO, MA TUTTO OK (Nessun errore)"
           fi
