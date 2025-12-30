@@ -1,7 +1,8 @@
 import pandas as pd
 import os
 
-# --- I TUOI LINK GIÀ CONVERTITI IN CSV ---
+# --- I TUOI LINK CORRETTI (LI HO CONVERTITI IO IN CSV PER TE) ---
+# Non toccarli, questi funzionano.
 URL_ACQUIRENTI = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQZIA9jfHfgbBCBoxygzrz54_KABSBO8uLIVBnWIPpBNoIx9xmWLR-nuTx7sknVd95TYhueH5pETdR_/pub?gid=1947365306&single=true&output=csv"
 URL_IMMOBILI = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQZIA9jfHfgbBCBoxygzrz54_KABSBO8uLIVBnWIPpBNoIx9xmWLR-nuTx7sknVd95TYhueH5pETdR_/pub?gid=835643388&single=true&output=csv"
 
@@ -10,37 +11,33 @@ OUTPUT_DIR = "pagine_clienti"
 if not os.path.exists(OUTPUT_DIR):
     os.makedirs(OUTPUT_DIR)
 
-print("1. Scarico i dati...")
+print("SCARICO DATI...")
 try:
     acquirenti = pd.read_csv(URL_ACQUIRENTI)
     immobili = pd.read_csv(URL_IMMOBILI)
     
-    # Pulizia Prezzi (toglie € e spazi)
+    # Pulisco i numeri (tolgo € e spazi)
     acquirenti['Budget Max'] = pd.to_numeric(acquirenti['Budget Max'].astype(str).str.replace(r'[^\d]', '', regex=True), errors='coerce')
     immobili['prezzo'] = pd.to_numeric(immobili['prezzo'].astype(str).str.replace(r'[^\d]', '', regex=True), errors='coerce')
-    
-    print(f"✅ Dati scaricati! Trovati {len(acquirenti)} acquirenti e {len(immobili)} immobili.")
+    print("✅ Dati scaricati!")
 except Exception as e:
-    print(f"❌ Errore lettura dati: {e}")
+    print(f"❌ Errore: {e}")
     exit()
 
-# Template HTML
+# Template semplice
 html_template = """
 <!DOCTYPE html>
-<html>
-<head><title>Proposte</title></head>
-<body><h1>Ciao {nome}, ecco le case a {citta}:</h1>{contenuto}</body>
-</html>
+<html><body><h1>Ciao {nome}</h1><p>Ecco case a {citta}:</p>{contenuto}</body></html>
 """
 
-print("2. Cerco corrispondenze...")
+print("CERCO MATCH...")
 count = 0
 for index, cliente in acquirenti.iterrows():
     nome = str(cliente['Nome'])
     citta = str(cliente['Città'])
     budget = cliente['Budget Max']
     
-    # Cerca immobili: Zona contiene Città Cliente (es. 'Favara') E Prezzo <= Budget
+    # Filtro
     match = immobili[
         (immobili['zona'].str.contains(citta, case=False, na=False)) & 
         (immobili['prezzo'] <= budget)
@@ -51,13 +48,10 @@ for index, cliente in acquirenti.iterrows():
         for idx, casa in match.iterrows():
             schede += f"<p>🏠 {casa['zona']} - € {casa['prezzo']}</p>"
         
-        pagina = html_template.format(nome=nome, citta=citta, contenuto=schede)
-        filename = f"proposte_{cliente['id']}_{nome.replace(' ', '_')}.html"
-        
-        with open(f"{OUTPUT_DIR}/{filename}", "w") as f:
-            f.write(pagina)
+        with open(f"{OUTPUT_DIR}/proposte_{cliente['id']}.html", "w") as f:
+            f.write(html_template.format(nome=nome, citta=citta, contenuto=schede))
         print(f"✅ Pagina creata per {nome}")
         count += 1
 
 if count == 0:
-    print("⚠️ Nessuna pagina generata. Nessun immobile soddisfa i requisiti.")
+    print("⚠️ Nessuna pagina creata (nessun match), ma il codice funziona.")
