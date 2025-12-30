@@ -1,4 +1,4 @@
-name: Bot Immobiliare Ultima Chance
+name: Ultimo Tentativo Sicuro
 
 on:
   push:
@@ -18,16 +18,17 @@ jobs:
       - run: pip install pandas
       - run: python main.py
       
-      # SALVATAGGIO SICURO (ANTI-ROSSO)
+      # SALVATAGGIO "ANTI-ERRORE"
       - run: |
           git config --global user.name 'Agente Bot'
           git config --global user.email 'bot@noreply.github.com'
           
+          # Se trova file li carica, se non li trova dice solo "OK"
           if ls pagine_clienti/*.html 1> /dev/null 2>&1; then
              git add pagine_clienti/*
              git commit -m "Nuove proposte"
              git push
-             echo "✅ FILE CARICATI"
+             echo "✅ FILE CARICATI CON SUCCESSO"
           else
              echo "✅ NESSUN FILE GENERATO, MA TUTTO OK (Nessun errore)"
           fi
